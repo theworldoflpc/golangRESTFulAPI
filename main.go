@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -33,12 +35,26 @@ func getBooks(writer http.ResponseWriter, request *http.Request) {
 
 // get single book
 func getBook(writer http.ResponseWriter, request *http.Request) {
-
+	writer.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(request) // get params
+	// loop thru books and find with id, make sure its equal to params id
+	for _, item := range books {
+		if item.ID == params["id"] {
+			json.NewEncoder(writer).Encode(item)
+			return
+		}
+	}
+	json.NewEncoder(writer).Encode(&Book{})
 }
 
 // create a new book
 func createBook(writer http.ResponseWriter, request *http.Request) {
-
+	writer.Header().Set("Content-Type", "application/json")
+	var book Book
+	_ = json.NewDecoder(request.Body).Decode(&book)
+	book.ID = strconv.Itoa(rand.Intn(10000000)) // Mock - ID not safe to use in production as can generate same ID
+	books = append(books, book)
+	json.NewEncoder(writer).Encode(book)
 }
 
 // update book
@@ -48,7 +64,13 @@ func updateBook(writer http.ResponseWriter, request *http.Request) {
 
 // delete book
 func deleteBook(writer http.ResponseWriter, request *http.Request) {
-
+	writer.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(request)
+	for index, item := range books {
+		if item.ID == params["id"]
+		books = append(books[:index], books[index+1]...)
+		break
+	}
 }
 
 func main() {
@@ -62,10 +84,11 @@ func main() {
 
 	// create route handlers/ endpoints, endpoints for API
 	router.HandleFunc("/api/books", getBooks).Methods("GET")
-	router.HandleFunc("/api/books/{id}", getBooks).Methods("GET")
+	router.HandleFunc("/api/books/{id}", getBook).Methods("GET")
 	router.HandleFunc("/api/books", createBook).Methods("POST")
 	router.HandleFunc("/api/books/{id}", updateBook).Methods("PUT")
 	router.HandleFunc("/api/books/{id}", deleteBook).Methods("DELETE")
 
+	// Start server, log if fatal
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
