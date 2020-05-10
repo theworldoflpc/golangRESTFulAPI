@@ -59,7 +59,20 @@ func createBook(writer http.ResponseWriter, request *http.Request) {
 
 // update book
 func updateBook(writer http.ResponseWriter, request *http.Request) {
-
+	writer.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(request)
+	for index, item := range books {
+		if item.ID == params["id"] {
+			books = append(books[:index], books[index+1:]...)
+			var book Book
+			_ = json.NewDecoder(request.Body).Decode(&book)
+			book.ID = params["id"]
+			books = append(books, book)
+			json.NewEncoder(writer).Encode(book)
+			return
+		}
+	}
+	json.NewEncoder(writer).Encode(books)
 }
 
 // delete book
@@ -67,10 +80,12 @@ func deleteBook(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(request)
 	for index, item := range books {
-		if item.ID == params["id"]
-		books = append(books[:index], books[index+1]...)
-		break
+		if item.ID == params["id"] {
+			books = append(books[:index], books[index+1:]...)
+			break
+		}
 	}
+	json.NewEncoder(writer).Encode(books)
 }
 
 func main() {
